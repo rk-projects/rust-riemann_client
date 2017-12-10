@@ -11,6 +11,8 @@ extern crate protobuf;
 extern crate riemann_client;
 extern crate rustc_serialize;
 
+use riemann_client::proto::Attribute;
+
 static USAGE: &'static str = "
 Usage: riemann_cli [-HP] send [options]
        riemann_cli [-HP] query <query>
@@ -89,7 +91,16 @@ fn main() {
         }
 
         if !args.flag_attribute.is_empty() {
-            unimplemented!();
+            let mut vec_attr: Vec<Attribute> = Vec::new();
+            let mut args_attr: Vec<String> = args.flag_attribute;
+            for attr in args_attr.iter_mut() {
+                let mut res: Vec<String> = attr.split("=").map(|s| s.to_string()).collect();
+                let mut at = riemann_client::proto::Attribute::new();
+                if let Some(x) = res.pop() { at.set_value(x) };
+                if let Some(x) = res.pop() { at.set_key(x) };
+                vec_attr.push(at);
+            }
+            event.set_attributes(protobuf::RepeatedField::from_vec(vec_attr));
         }
 
         println!("--> {{ {:?} }}", event);
